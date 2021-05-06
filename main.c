@@ -1,0 +1,1 @@
+../../../common/anomaly_detector/main.c
