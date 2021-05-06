@@ -42,16 +42,17 @@ th_load_tensor(void)
 	printf("g_buff_size: %i ",g_buff_size);
 	printf("src_mem_size: %i\r\n",src_mem_size);
     for (int i = 0; i < slices*bins; i+=skip) { //Load input data, number of features = slices/bins (4x128 in our case), only loading every nth
-    	memcpy(&data_flt,&gp_buff[i*floatsize],(int)floatsize);
-    	unsigned char data_fxd = (unsigned char)data_flt;
-    	src_mem[i] = data_fxd;
-    	printf("Load Iteration with Skip %i: %i\r\n",skip,i);
+    	//memcpy(&data_flt,&gp_buff[i*floatsize],(int)floatsize);
+    	//unsigned char data_fxd = (unsigned char)data_flt;
+    	src_mem[i] = gp_buff[i*floatsize];
+    	printf("Load Iteration with data %i: Feature # %i\r\n",(unsigned int)src_mem[i],(i/skip)+1);
     	newcnt++;
     }
     for (int i = 0; i < dst_mem_size; i++) {//Init DST mem with 0's
         dst_mem[i] = 0x0;
     }
     printf("Loaded features: %i\r\n",newcnt);
+    //malloc_stats();
 }
 
 /**
@@ -79,7 +80,7 @@ th_results(void)
     float result = 0;
     float sum = 0.0;
     /* Populate results[] and n from the fp32 prediction tensor. */
-    printf("INFO: Starting results iteration, src_FEATURE_COUNT %i * floatsize %i\r\n",(src_FEATURE_COUNT,floatsize));
+    printf("INFO: Starting results iteration, src_FEATURE_COUNT %i * floatsize %i\r\n",src_FEATURE_COUNT,(int)floatsize);
     for(size_t i = 0; i < src_FEATURE_COUNT*floatsize; i+=floatsize){ //find the error score of each feature, then average over all features
     	//printf("INFO: Iteration %i\r\n",(i/floatsize));
     	//printf("INFO: SRC Mem:  %i",(src_mem[i]));
@@ -87,7 +88,7 @@ th_results(void)
     	uint8_t diff = src_mem[i]-dst_mem[i];
     	float sq = (float)diff*(float)diff;
     	sum += sq;
-    	printf("INFO: Anomaly Feature diff, sum: %i, %.3f\r\n",diff,sum);
+    	printf("INFO: Anomaly Feature # %i diff, sum: %i, %.3f\r\n",(i/floatsize),diff,sum);
     }
     float mse = sum/(src_FEATURE_COUNT);
     printf("INFO: Anomaly Score (MSE): %.3f\r\n",mse);
@@ -99,5 +100,5 @@ th_results(void)
      * The results need to be printed back in exactly this forth_printf("m-results-[%0.3f]\r\n", result);mat; if easier
      * to just modify this loop than copy to results[] above, do that.
      */
-    th_printf("m-results-[%0.3f]\r\n", result); //copied from the ref implementation
+    th_printf("m-results-[%0.3f]\r\n", result);
 }
